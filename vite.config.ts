@@ -16,7 +16,7 @@ import Markdown from "vite-plugin-vue-markdown"
 import WebfontDownload from "vite-plugin-webfont-dl"
 import WindiCSS from "vite-plugin-windicss"
 import generateSitemap from "vite-ssg-sitemap"
-import windiConfig from "windi.config"
+import windiConfig from "./windi.config"
 
 export default defineConfig({
   resolve: {

@@ -1,21 +1,22 @@
 <script setup lang="ts">
-// https://github.com/vueuse/head
-// you can use this to manipulate the document head in any components,
-// they will be rendered correctly in the html results with vite-ssg
+const themeStore = useThemeStore()
+
 useHead({
-  title: 'Vitesse',
+  title: "Vitesse",
   meta: [
-    { name: 'description', content: 'Opinionated Vite Starter Template' },
+    { name: "description", content: "Opinionated Vite Starter Template" },
     {
-      name: 'theme-color',
-      content: computed(() => isDark.value ? '#00aba9' : '#ffffff'),
+      name: "theme-color",
+      content: computed(() => (themeStore.isDark ? "#00aba9" : "#ffffff")),
     },
   ],
   link: [
     {
-      rel: 'icon',
-      type: 'image/svg+xml',
-      href: computed(() => preferredDark.value ? '/favicon-dark.svg' : '/favicon.svg'),
+      rel: "icon",
+      type: "image/svg+xml",
+      href: computed(() =>
+        themeStore.preferredDark ? "/favicon-dark.svg" : "/favicon.svg",
+      ),
     },
   ],
 })

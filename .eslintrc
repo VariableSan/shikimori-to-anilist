@@ -14,7 +14,8 @@
       {
         "allowSingleExtends": true
       }
-    ]
+    ],
+    "@typescript-eslint/no-explicit-any": "off"
   },
   "extends": [
     "eslint:recommended",
