@@ -13,7 +13,7 @@ const onClick = () => {
 
 <template>
   <button
-    class="flex font-bold bg-green-500 rounded-2xl h-8 text-white w-max px-4 group relative overflow-hidden items-center"
+    class="flex font-bold bg-green-500 rounded-2xl h-10 text-white w-max px-4 group relative overflow-hidden items-center"
     :disabled="disabled"
     @click="onClick"
   >

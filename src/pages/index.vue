@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { gql } from "@apollo/client/core"
+import { useQuery } from "@vue/apollo-composable"
 import { UserAnimeRate } from "~/models/shikimori.model"
 import { fetchAnimeList } from "~/services/shikimori.service"
 import { useGlobalState } from "~/stores/global-state"
@@ -16,6 +18,7 @@ const { t } = useI18n()
 const shikimoriId = $ref<string>()
 let animeRateList = $ref<UserAnimeRate[]>([])
 const anilistCode = $ref<string>()
+let res = $ref()
 /* ==================== refs END ==================== */
 
 /* ==================== methods START ==================== */
@@ -34,6 +37,29 @@ const getAnilistCode = () => {
   window.open(
     `https://anilist.co/api/v2/oauth/authorize?client_id=${anilistClientId}&response_type=token`,
   )
+}
+
+const testGraphql = () => {
+  const { result } = useQuery(
+    gql`
+      query ($id: Int) {
+        # Define which variables will be used in the query (id)
+        Media(id: $id, type: ANIME) {
+          # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
+          id
+          title {
+            romaji
+            english
+            native
+          }
+        }
+      }
+    `,
+    {
+      id: 15125,
+    },
+  )
+  res = result.value
 }
 /* ==================== methods END ==================== */
 </script>
@@ -66,6 +92,8 @@ const getAnilistCode = () => {
         <ButtonComponent @click="getAnilistCode">
           {{ t("anilist.login") }}
         </ButtonComponent>
+
+        <ButtonComponent @click="testGraphql"> testGraphql </ButtonComponent>
       </div>
     </div>
 
@@ -73,6 +101,10 @@ const getAnilistCode = () => {
       <div v-for="animeRate in animeRateList" :key="animeRate.id">
         <pre> {{ animeRate }} </pre>
       </div>
+    </div>
+
+    <div>
+      <pre> {{ res }} </pre>
     </div>
   </div>
 </template>

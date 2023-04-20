@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { AccessToken } from "~/models/common.model"
+import { useAnilistState } from "~/stores/anilist-state"
 
 /* ==================== composables START ==================== */
 const route = useRoute()
 const router = useRouter()
+const anilistState = useAnilistState()
 /* ==================== composables END ==================== */
 
 /* ==================== methods START ==================== */
@@ -14,6 +16,7 @@ const setToken = (tokenHash: string[]) => {
 
   const token: AccessToken = { accessToken, tokenType, expiresIn }
   localStorage.setItem("anilistToken", JSON.stringify(token))
+  anilistState.setToken(token)
 
   router.push("/")
 }
