@@ -1,0 +1,12 @@
+query GetAnimeList($userName: String) {
+  Page(perPage: 1000) {
+    mediaList(userName: $userName, type: ANIME) {
+      media {
+        id
+        status
+        type
+      }
+    }
+  }
+
+}

@@ -3,8 +3,14 @@ intro:
 
 shiki:
   empty_shiki_id: Shikimori ID input can not be empty
+  import_anime_list: Import anime list
+  anime_list_imported_successfully: Anime list imported successfully
 
 anilist:
   login: Login with AniList
+  token_expired: Your token is expired, relogin please
+  export_anime_to_anilist: Export anime list now
+  can_not_set_anime: Can not set anime {animeName}
+  anime_set_successfully: Anime {animeName} set successfully
 
 not-found: Not found

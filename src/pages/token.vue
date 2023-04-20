@@ -15,7 +15,6 @@ const setToken = (tokenHash: string[]) => {
   )
 
   const token: AccessToken = { accessToken, tokenType, expiresIn }
-  localStorage.setItem("anilistToken", JSON.stringify(token))
   anilistState.setToken(token)
 
   router.push("/")

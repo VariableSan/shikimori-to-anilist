@@ -22,5 +22,5 @@
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended"
   ],
-  "ignorePatterns": ["gql", "apollo.config.js"]
+  "ignorePatterns": ["./src/gql/**/*.*", "apollo.config.js"]
 }

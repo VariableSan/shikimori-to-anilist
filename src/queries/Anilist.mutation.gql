@@ -1,0 +1,6 @@
+mutation SetAnimeToUserList($mediaId: Int, $status: MediaListStatus) {
+  SaveMediaListEntry(mediaId: $mediaId, status: $status) {
+    id
+    status
+  }
+}

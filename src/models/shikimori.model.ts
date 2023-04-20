@@ -55,3 +55,8 @@ export interface UserImage {
   x32: string
   x16: string
 }
+
+export interface DefaultQueryParams {
+  limit: number
+  page: number
+}

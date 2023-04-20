@@ -1,20 +1,18 @@
 <script setup lang="ts">
-import { AccessToken } from "~/models/common.model"
 import { useAnilistState } from "~/stores/anilist-state"
 import { useGlobalState } from "~/stores/global-state"
+import { useShikiState } from "~/stores/shikimori-state"
 
 /* ==================== composables START ==================== */
 const globalState = useGlobalState()
 const anilistState = useAnilistState()
+const shikiState = useShikiState()
 /* ==================== composables END ==================== */
 
 /* ==================== hooks START ==================== */
 onMounted(() => {
-  const storageAnilistToken = localStorage.getItem("anilistToken")
-  if (storageAnilistToken) {
-    const token: AccessToken = JSON.parse(storageAnilistToken)
-    anilistState.setToken(token)
-  }
+  anilistState.setTokenFromStorage()
+  shikiState.setAnimeListFromStorage()
 })
 /* ==================== hooks END ==================== */
 
