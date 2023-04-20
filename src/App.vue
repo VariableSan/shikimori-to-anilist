@@ -2,7 +2,7 @@
 const themeStore = useThemeStore()
 
 useHead({
-  title: "Vitesse",
+  title: "Shikimori to Anilist",
   meta: [
     { name: "description", content: "Opinionated Vite Starter Template" },
     {

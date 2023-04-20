@@ -4,6 +4,8 @@ import LinkAttributes from "markdown-it-link-attributes"
 import Shiki from "markdown-it-shiki"
 import path from "node:path"
 import AutoImport from "unplugin-auto-import/vite"
+import Icons from "unplugin-icons"
+import IconsResolver from "unplugin-icons/resolver"
 import Components from "unplugin-vue-components/vite"
 import VueMacros from "unplugin-vue-macros"
 import { defineConfig } from "vite"
@@ -17,11 +19,17 @@ import WebfontDownload from "vite-plugin-webfont-dl"
 import WindiCSS from "vite-plugin-windicss"
 import generateSitemap from "vite-ssg-sitemap"
 import windiConfig from "./windi.config"
+import "dotenv/config"
 
 export default defineConfig({
+  server: {
+    port: process.env.VITE_APP_PORT as unknown as number,
+  },
+
   resolve: {
     alias: {
       "~/": `${path.resolve(__dirname, "src")}/`,
+      "@/": `${path.resolve(__dirname, "src")}/`,
     },
   },
 
@@ -65,6 +73,7 @@ export default defineConfig({
       // allow auto import and register components used in markdown
       include: [/\.vue$/, /\.vue\?vue/, /\.md$/],
       dts: "src/components.d.ts",
+      resolvers: [IconsResolver()],
     }),
 
     // https://github.com/antfu/vite-plugin-vue-markdown
@@ -141,6 +150,10 @@ export default defineConfig({
 
     WindiCSS({
       config: windiConfig,
+    }),
+
+    Icons.vite({
+      autoInstall: true,
     }),
   ],
 

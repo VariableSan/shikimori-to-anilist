@@ -9,11 +9,21 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    ButtonComponent: typeof import('./components/ButtonComponent.vue')['default']
+    GlobalLoader: typeof import('./components/GlobalLoader.vue')['default']
+    HeaderComponent: typeof import('./components/HeaderComponent.vue')['default']
+    ICarbon3dCursorAlt: typeof import('~icons/carbon/3d-cursor-alt')['default']
+    ICarbonAccessibility: typeof import('~icons/carbon/accessibility')['default']
+    ICarbonDownload: typeof import('~icons/carbon/download')['default']
+    IIconAccessibility: typeof import('~icons/ic/on-accessibility')['default']
+    InputField: typeof import('./components/InputField.vue')['default']
     README: typeof import('./components/README.md')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TheCounter: typeof import("./components/TheCounter.vue")["default"]
     TheFooter: typeof import("./components/TheFooter.vue")["default"]
     TheInput: typeof import("./components/TheInput.vue")["default"]
+    ToastComponent: typeof import('./components/ToastComponent.vue')['default']
+    ToastNotification: typeof import('./components/ToastNotification.vue')['default']
   }
 }
