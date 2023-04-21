@@ -6,7 +6,19 @@ query GetAnimeList($userName: String) {
         status
         type
       }
+      status
     }
   }
+}
 
+query SearchAnimeByName($search: String) {
+  Media(type: ANIME, search: $search) {
+    id
+  }
+}
+
+query SearchMangaByName($search: String) {
+  Media(type: MANGA, search: $search) {
+    id
+  }
 }

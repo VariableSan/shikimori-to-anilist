@@ -1,4 +1,8 @@
-import { DefaultQueryParams, UserAnimeRate } from "~/models/shikimori.model"
+import {
+  DefaultQueryParams,
+  UserAnimeRate,
+  UserMangaRate,
+} from "~/models/shikimori.model"
 import axios from "~/tools/shikimori-axios"
 
 const defaultParams: DefaultQueryParams = {
@@ -25,4 +29,25 @@ export async function fetchAnimeList(
   }
 
   return animeRates
+}
+
+export async function fetchMangaList(
+  userId: string,
+  params: DefaultQueryParams = defaultParams,
+) {
+  let mangaRates: UserMangaRate[] = []
+
+  try {
+    const res = await axios.get<UserMangaRate[]>(
+      `/users/${userId}/manga_rates`,
+      {
+        params,
+      },
+    )
+    mangaRates = res.data
+  } catch (error) {
+    console.error(error)
+  }
+
+  return mangaRates
 }

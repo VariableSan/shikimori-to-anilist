@@ -12,5 +12,10 @@ anilist:
   export_anime_to_anilist: Export anime list now
   can_not_set_anime: Can not set anime {animeName}
   anime_set_successfully: Anime {animeName} set successfully
+  token_has_not_expired: Your token has not expired yet, are you sure?
+
+general:
+  several_failed_imports: There are several failed imports
+  successful_import: Successful import to anilist
 
 not-found: Not found

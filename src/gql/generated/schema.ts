@@ -4671,24 +4671,47 @@ export type YearStats = {
 export type SetAnimeToUserListMutationVariables = Exact<{
   mediaId?: InputMaybe<Scalars['Int']>;
   status?: InputMaybe<MediaListStatus>;
+  score?: InputMaybe<Scalars['Float']>;
+  repeat?: InputMaybe<Scalars['Int']>;
+  startedAt?: InputMaybe<FuzzyDateInput>;
+  completedAt?: InputMaybe<FuzzyDateInput>;
 }>;
 
 
-export type SetAnimeToUserListMutation = { __typename?: 'Mutation', SaveMediaListEntry?: { __typename?: 'MediaList', id: number, status?: MediaListStatus | null } | null };
+export type SetAnimeToUserListMutation = { __typename?: 'Mutation', SaveMediaListEntry?: { __typename?: 'MediaList', id: number, status?: MediaListStatus | null, media?: { __typename?: 'Media', title?: { __typename?: 'MediaTitle', english?: string | null } | null } | null } | null };
 
 export type GetAnimeListQueryVariables = Exact<{
   userName?: InputMaybe<Scalars['String']>;
 }>;
 
 
-export type GetAnimeListQuery = { __typename?: 'Query', Page?: { __typename?: 'Page', mediaList?: Array<{ __typename?: 'MediaList', media?: { __typename?: 'Media', id: number, status?: MediaStatus | null, type?: MediaType | null } | null } | null> | null } | null };
+export type GetAnimeListQuery = { __typename?: 'Query', Page?: { __typename?: 'Page', mediaList?: Array<{ __typename?: 'MediaList', status?: MediaListStatus | null, media?: { __typename?: 'Media', id: number, status?: MediaStatus | null, type?: MediaType | null } | null } | null> | null } | null };
+
+export type SearchAnimeByNameQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']>;
+}>;
+
+
+export type SearchAnimeByNameQuery = { __typename?: 'Query', Media?: { __typename?: 'Media', id: number } | null };
 
 
 export const SetAnimeToUserListDocument = gql`
-    mutation SetAnimeToUserList($mediaId: Int, $status: MediaListStatus) {
-  SaveMediaListEntry(mediaId: $mediaId, status: $status) {
+    mutation SetAnimeToUserList($mediaId: Int, $status: MediaListStatus, $score: Float, $repeat: Int, $startedAt: FuzzyDateInput, $completedAt: FuzzyDateInput) {
+  SaveMediaListEntry(
+    mediaId: $mediaId
+    status: $status
+    score: $score
+    repeat: $repeat
+    startedAt: $startedAt
+    completedAt: $completedAt
+  ) {
     id
     status
+    media {
+      title {
+        english
+      }
+    }
   }
 }
     `;
@@ -4708,6 +4731,10 @@ export const SetAnimeToUserListDocument = gql`
  *   variables: {
  *     mediaId: // value for 'mediaId'
  *     status: // value for 'status'
+ *     score: // value for 'score'
+ *     repeat: // value for 'repeat'
+ *     startedAt: // value for 'startedAt'
+ *     completedAt: // value for 'completedAt'
  *   },
  * });
  */
@@ -4724,6 +4751,7 @@ export const GetAnimeListDocument = gql`
         status
         type
       }
+      status
     }
   }
 }
@@ -4751,3 +4779,33 @@ export function useGetAnimeListLazyQuery(variables: GetAnimeListQueryVariables |
   return VueApolloComposable.useLazyQuery<GetAnimeListQuery, GetAnimeListQueryVariables>(GetAnimeListDocument, variables, options);
 }
 export type GetAnimeListQueryCompositionFunctionResult = VueApolloComposable.UseQueryReturn<GetAnimeListQuery, GetAnimeListQueryVariables>;
+export const SearchAnimeByNameDocument = gql`
+    query SearchAnimeByName($search: String) {
+  Media(type: ANIME, search: $search) {
+    id
+  }
+}
+    `;
+
+/**
+ * __useSearchAnimeByNameQuery__
+ *
+ * To run a query within a Vue component, call `useSearchAnimeByNameQuery` and pass it any options that fit your needs.
+ * When your component renders, `useSearchAnimeByNameQuery` returns an object from Apollo Client that contains result, loading and error properties
+ * you can use to render your UI.
+ *
+ * @param variables that will be passed into the query
+ * @param options that will be passed into the query, supported options are listed on: https://v4.apollo.vuejs.org/guide-composable/query.html#options;
+ *
+ * @example
+ * const { result, loading, error } = useSearchAnimeByNameQuery({
+ *   search: // value for 'search'
+ * });
+ */
+export function useSearchAnimeByNameQuery(variables: SearchAnimeByNameQueryVariables | VueCompositionApi.Ref<SearchAnimeByNameQueryVariables> | ReactiveFunction<SearchAnimeByNameQueryVariables> = {}, options: VueApolloComposable.UseQueryOptions<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables> | VueCompositionApi.Ref<VueApolloComposable.UseQueryOptions<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables>> | ReactiveFunction<VueApolloComposable.UseQueryOptions<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables>> = {}) {
+  return VueApolloComposable.useQuery<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables>(SearchAnimeByNameDocument, variables, options);
+}
+export function useSearchAnimeByNameLazyQuery(variables: SearchAnimeByNameQueryVariables | VueCompositionApi.Ref<SearchAnimeByNameQueryVariables> | ReactiveFunction<SearchAnimeByNameQueryVariables> = {}, options: VueApolloComposable.UseQueryOptions<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables> | VueCompositionApi.Ref<VueApolloComposable.UseQueryOptions<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables>> | ReactiveFunction<VueApolloComposable.UseQueryOptions<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables>> = {}) {
+  return VueApolloComposable.useLazyQuery<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables>(SearchAnimeByNameDocument, variables, options);
+}
+export type SearchAnimeByNameQueryCompositionFunctionResult = VueApolloComposable.UseQueryReturn<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables>;

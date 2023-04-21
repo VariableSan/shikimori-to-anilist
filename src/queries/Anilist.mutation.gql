@@ -1,6 +1,25 @@
-mutation SetAnimeToUserList($mediaId: Int, $status: MediaListStatus) {
-  SaveMediaListEntry(mediaId: $mediaId, status: $status) {
+mutation SetAnimeToUserList(
+  $mediaId: Int
+  $status: MediaListStatus
+  $score: Float
+  $repeat: Int
+  $startedAt: FuzzyDateInput
+  $completedAt: FuzzyDateInput
+) {
+  SaveMediaListEntry(
+    mediaId: $mediaId
+    status: $status
+    score: $score
+    repeat: $repeat
+    startedAt: $startedAt
+    completedAt: $completedAt
+  ) {
     id
     status
+    media {
+      title {
+        english
+      }
+    }
   }
 }

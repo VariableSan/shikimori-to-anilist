@@ -33,6 +33,10 @@ export const useAnilistState = defineStore("anilistState", () => {
       setToken(token)
     }
   }
+
+  const clearToken = () => {
+    token.value = undefined
+  }
   /* ==================== methods END ==================== */
 
   return {
@@ -41,5 +45,6 @@ export const useAnilistState = defineStore("anilistState", () => {
     setToken,
     isTokenExpired,
     setTokenFromStorage,
+    clearToken,
   }
 })

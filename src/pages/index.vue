@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import {
-  GetAnimeListQuery,
-  MediaListStatus,
-  useGetAnimeListQuery,
+  SearchAnimeByNameQuery,
+  useSearchAnimeByNameQuery,
   useSetAnimeToUserListMutation,
 } from "~/gql/generated/schema"
+import { convertShikiStatusToAnilist } from "~/helpers/status-converting"
 import { fetchAnimeList } from "~/services/shikimori.service"
 import { useGlobalState } from "~/stores/global-state"
 import { useShikiState } from "~/stores/shikimori-state"
@@ -44,16 +44,16 @@ const isReadyToImport = computed(
 
 /* ==================== refs START ==================== */
 const shikimoriId = $ref<string>()
-const res = ref<GetAnimeListQuery>()
 /* ==================== refs END ==================== */
 
 /* ==================== methods START ==================== */
 const importAnimeFromShiki = async () => {
   if (shikimoriId?.length) {
+    shikiState.setAnimeList([])
     globalState.toggleLoadingState()
 
     const res = await fetchAnimeList(shikimoriId, {
-      limit: 1,
+      limit: 20,
       page: 1,
     })
     shikiState.setAnimeList(res)
@@ -69,53 +69,82 @@ const importAnimeFromShiki = async () => {
   }
 }
 
-const getAnilistCode = () => {
-  const anilistClientId = import.meta.env.VITE_ANILIST_CLIENT_ID
-  window.open(
-    `https://anilist.co/api/v2/oauth/authorize?client_id=${anilistClientId}&response_type=token`,
-    "_self",
-  )
+const loginWithAnilist = () => {
+  let isAgreedToRelogin = true
+
+  if (!anilistState.isTokenExpired()) {
+    isAgreedToRelogin = confirm(t("anilist.token_has_not_expired"))
+  }
+
+  if (isAgreedToRelogin) {
+    anilistState.clearToken()
+    const anilistClientId = import.meta.env.VITE_ANILIST_CLIENT_ID
+    window.open(
+      `https://anilist.co/api/v2/oauth/authorize?client_id=${anilistClientId}&response_type=token`,
+      "_self",
+    )
+  }
 }
 
-const testGraphql = () => {
-  const { result, loading } = useGetAnimeListQuery({
-    userName: "VariableSan",
+const searchAnimeByName = (name: string) => {
+  const { onResult, onError } = useSearchAnimeByNameQuery({
+    search: name,
   })
-  globalState.toggleLoadingState()
 
-  watch(loading, () => {
-    globalState.toggleLoadingState()
-    res.value = result.value
+  return new Promise<SearchAnimeByNameQuery>((res, rej) => {
+    onResult(result => {
+      res(result.data)
+    })
+    onError(error => {
+      rej(error)
+    })
   })
 }
 
 const exportAnimeListToAnilist = async () => {
-  const { mutate } = useSetAnimeToUserListMutation({
-    variables: {
-      mediaId: 127230,
-      status: MediaListStatus.Completed,
-    },
-  })
+  const failedAnimeNames: string[] = []
 
-  try {
-    globalState.toggleLoadingState()
-    await mutate()
-    globalState.showToast(
-      t("anilist.anime_set_successfully", {
-        animeName: "haha",
-      }),
-      "success",
-    )
-  } catch (error) {
-    console.error(`anime id:`)
-    globalState.showToast(
-      t("anilist.can_not_set_anime", {
-        animeName: "haha",
-      }),
-      "danger",
-    )
-  } finally {
-    globalState.toggleLoadingState()
+  globalState.toggleLoadingState()
+
+  for (let i = 0; i < shikiAnimeRateList.value.length; i++) {
+    const animeRate = shikiAnimeRateList.value[i]
+    try {
+      const res = await searchAnimeByName(animeRate.anime.name)
+      const updatedAtDate = new Date(animeRate.updated_at)
+      const createdAtDate = new Date(animeRate.created_at)
+
+      const { mutate } = useSetAnimeToUserListMutation({
+        variables: {
+          mediaId: res.Media?.id,
+          status: convertShikiStatusToAnilist(animeRate.status),
+          score: animeRate.score,
+          repeat: animeRate.rewatches,
+          completedAt: {
+            day: updatedAtDate.getDay(),
+            month: updatedAtDate.getMonth(),
+            year: updatedAtDate.getFullYear(),
+          },
+          startedAt: {
+            day: createdAtDate.getDay(),
+            month: createdAtDate.getMonth(),
+            year: createdAtDate.getFullYear(),
+          },
+        },
+      })
+
+      await mutate()
+    } catch (error) {
+      failedAnimeNames.push(animeRate.anime.name)
+      console.error(error)
+    }
+  }
+
+  globalState.toggleLoadingState()
+
+  if (failedAnimeNames.length) {
+    globalState.showToast(t("general.several_failed_imports"), "warn")
+  } else {
+    globalState.showToast(t("general.successful_import"), "success")
   }
 }
 /* ==================== methods END ==================== */
@@ -156,11 +185,9 @@ const exportAnimeListToAnilist = async () => {
           </span>
         </p>
 
-        <ButtonComponent @click="getAnilistCode">
+        <ButtonComponent @click="loginWithAnilist">
           {{ t("anilist.login") }}
         </ButtonComponent>
-
-        <ButtonComponent @click="testGraphql"> testGraphql </ButtonComponent>
       </div>
     </div>
 

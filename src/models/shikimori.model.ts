@@ -1,7 +1,7 @@
 export interface UserAnimeRate {
   id: number
   score: number
-  status: string
+  status: AnimeStatus
   text: string
   episodes: number
   chapters: number
@@ -59,4 +59,52 @@ export interface UserImage {
 export interface DefaultQueryParams {
   limit: number
   page: number
+}
+
+export enum AnimeStatus {
+  PLANNED = "planned",
+  WATCHING = "watching",
+  REWATCHING = "rewatching",
+  COMPLETED = "completed",
+  ON_HOLD = "on_hold",
+  DROPPED = "dropped",
+}
+
+export interface UserMangaRate {
+  id: number
+  score: number
+  status: AnimeStatus
+  text: null
+  episodes: null
+  chapters: number
+  volumes: number
+  text_html: string
+  rewatches: number
+  created_at: string
+  updated_at: string
+  user: User
+  anime: null
+  manga: Manga
+}
+
+export interface Manga {
+  id: number
+  name: string
+  russian: string
+  image: MangaImage
+  url: string
+  kind: string
+  score: string
+  status: string
+  volumes: number
+  chapters: number
+  aired_on: null
+  released_on: null
+}
+
+export interface MangaImage {
+  original: string
+  preview: string
+  x96: string
+  x48: string
 }
