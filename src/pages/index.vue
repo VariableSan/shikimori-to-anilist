@@ -203,6 +203,11 @@ const exportRateListToAnilist = async (type: RateType) => {
 
   for (let i = 0; i < rateList.length; i++) {
     const rate = rateList[i]
+
+    globalState.loadingScreenTip = rate.anime
+      ? rate.anime.name
+      : rate.manga.name
+
     try {
       await proceedExport(rate)
     } catch (error) {
@@ -211,6 +216,7 @@ const exportRateListToAnilist = async (type: RateType) => {
     }
   }
 
+  globalState.clearLoadingScreenTip()
   globalState.toggleLoadingState()
 
   if (failedRateNames.length) {
@@ -224,68 +230,75 @@ const exportRateListToAnilist = async (type: RateType) => {
 
 <template>
   <div class="py-10 ccontainer">
-    <div class="mb-8">
-      <InputField v-model="fetchingLimit" label="Fetching limit" class="w-[20%]"></InputField>
-    </div>
-
-    <div class="grid gap-x-4 grid-cols-2 items-end">
+    <div class="border rounded mb-8 p-4">
       <InputField
-        v-model="shikimoriId"
-        label="Shikimori ID"
-        @enter="importAnimeFromShiki"
+        v-model="fetchingLimit"
+        label="Fetching limit"
+        class="w-[20%]"
       ></InputField>
-
-      <div class="grid grid-cols-3">
-        <ButtonComponent
-          @click="importAnimeFromShiki"
-          :disabled="globalState.loadingState"
-        >
-          <p class="mr-2">{{ t("shiki.import_anime_list") }}</p>
-          <i-carbon-download />
-        </ButtonComponent>
-
-        <ButtonComponent
-          @click="importMangaFromShiki"
-          :disabled="globalState.loadingState"
-        >
-          <p class="mr-2">{{ t("shiki.import_manga_list") }}</p>
-          <i-carbon-download />
-        </ButtonComponent>
-      </div>
-
-      <div>
-        <p>
-          {{ t("shiki.anime_list_status") }}:
-          <span :class="shikiAnimeListStatus.color">
-            {{ shikiAnimeListStatus.text }}
-          </span>
-        </p>
-        <p>
-          {{ t("shiki.manga_list_status") }}:
-          <span :class="shikiMangaListStatus.color">
-            {{ shikiMangaListStatus.text }}
-          </span>
-        </p>
-      </div>
     </div>
 
-    <div class="flex my-8 items-center">
-      <ButtonComponent @click="loginWithAnilist" class="mr-4">
-        {{ t("anilist.login") }}
-      </ButtonComponent>
+    <div class="border rounded mb-8 p-4">
+      <div class="grid gap-x-4 grid-cols-2 items-end">
+        <InputField
+          v-model="shikimoriId"
+          label="Shikimori ID"
+          @enter="importAnimeFromShiki"
+        ></InputField>
+        <div class="grid grid-cols-3">
+          <ButtonComponent
+            @click="importAnimeFromShiki"
+            :disabled="globalState.loadingState"
+          >
+            <p class="mr-2">{{ t("shiki.import_anime_list") }}</p>
+            <i-carbon-download />
+          </ButtonComponent>
+          <ButtonComponent
+            @click="importMangaFromShiki"
+            :disabled="globalState.loadingState"
+          >
+            <p class="mr-2">{{ t("shiki.import_manga_list") }}</p>
+            <i-carbon-download />
+          </ButtonComponent>
+        </div>
 
-      <p>
-        Anilist login status:
-        <span :class="anilistLoginStatus.color">
-          {{ anilistLoginStatus.text }}
-        </span>
-      </p>
+        <div class="border-b flex mt-2 mb-4 pb-4">
+          <p class="mr-4">
+            {{ t("shiki.anime_list_status") }}:
+            <span :class="shikiAnimeListStatus.color">
+              {{ shikiAnimeListStatus.text }}
+            </span>
+          </p>
+          <p>
+            {{ t("shiki.manga_list_status") }}:
+            <span :class="shikiMangaListStatus.color">
+              {{ shikiMangaListStatus.text }}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center">
+        <ButtonComponent
+          @click="loginWithAnilist"
+          class="mr-4"
+          :disabled="globalState.loadingState"
+        >
+          {{ t("anilist.login") }}
+        </ButtonComponent>
+        <p>
+          Anilist login status:
+          <span :class="anilistLoginStatus.color">
+            {{ anilistLoginStatus.text }}
+          </span>
+        </p>
+      </div>
     </div>
 
     <div class="flex justify-center">
       <ButtonComponent
         class="mr-4"
-        :disabled="!isAnimeReadyToImport"
+        :disabled="!isAnimeReadyToImport || globalState.loadingState"
         @click="exportRateListToAnilist('anime')"
       >
         <p class="mr-2">{{ t("anilist.export_anime_to_anilist") }}</p>
@@ -293,7 +306,7 @@ const exportRateListToAnilist = async (type: RateType) => {
       </ButtonComponent>
 
       <ButtonComponent
-        :disabled="!isMangaReadyToImport"
+        :disabled="!isMangaReadyToImport || globalState.loadingState"
         @click="exportRateListToAnilist('manga')"
       >
         <p class="mr-2">{{ t("anilist.export_manga_to_anilist") }}</p>

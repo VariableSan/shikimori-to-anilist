@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps({
   show: Boolean,
+  message: String,
 })
 </script>
 
@@ -15,9 +16,9 @@ defineProps({
   >
     <div
       v-if="show"
-      class="flex h-full bg-gray-800 w-full opacity-70 inset-0 transition-opacity z-100 duration-300 fixed items-center justify-center"
+      class="flex flex-col h-full bg-gray-800 w-full opacity-70 inset-0 transition-opacity z-100 duration-300 fixed items-center justify-center"
     >
-      <div class="flex-col">
+      <div>
         <x-loading class="h-24 w-24">
           <svg viewBox="0 0 860.1 876.5">
             <path
@@ -60,6 +61,10 @@ defineProps({
         <div class="font-mono mt-3 text-sm text-gray-200 sm:text-xs">
           Loading...
         </div>
+      </div>
+
+      <div v-if="message" class="flex mt-2 w-full justify-center">
+        <p>{{ message }}</p>
       </div>
     </div>
   </transition>

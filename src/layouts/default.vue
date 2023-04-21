@@ -31,7 +31,11 @@ watch(
       <RouterView />
     </main>
 
-    <GlobalLoader :show="globalState.loadingState"></GlobalLoader>
+    <GlobalLoader
+      :show="globalState.loadingState"
+      :message="globalState.loadingScreenTip"
+    ></GlobalLoader>
+
     <ToastComponent
       :show="globalState.toast.show"
       :color="globalState.toast.color"
