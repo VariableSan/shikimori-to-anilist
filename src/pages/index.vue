@@ -224,6 +224,10 @@ const exportRateListToAnilist = async (type: RateType) => {
 
 <template>
   <div class="py-10 ccontainer">
+    <div class="mb-8">
+      <InputField v-model="fetchingLimit" label="Fetching limit" class="w-[20%]"></InputField>
+    </div>
+
     <div class="grid gap-x-4 grid-cols-2 items-end">
       <InputField
         v-model="shikimoriId"
