@@ -191,14 +191,20 @@ const proceedExport = async (rate: UserAnimeRate | UserMangaRate) => {
   await mutate()
 }
 
-const exportRateListToAnilist = async (type: RateType) => {
-  const failedRateNames: string[] = []
-  let rateList: UserAnimeRate[] | UserMangaRate[] = []
+const exportRateListToAnilist = async (
+  type: RateType,
+  list: UserAnimeRate[] | UserMangaRate[] = [],
+) => {
+  const failedRateList: UserAnimeRate[] | UserMangaRate[] = []
 
-  if (type === "anime") {
-    rateList = shikiAnimeRateList.value
-  } else {
-    rateList = shikiMangaRateList.value
+  let rateList: UserAnimeRate[] | UserMangaRate[] = list
+
+  if (!list.length) {
+    if (type === "anime") {
+      rateList = shikiAnimeRateList.value
+    } else {
+      rateList = shikiMangaRateList.value
+    }
   }
 
   globalState.toggleLoadingState()
@@ -220,7 +226,7 @@ const exportRateListToAnilist = async (type: RateType) => {
         await promiseTimeout(timeoutSec * 1000)
       }
     } catch (error) {
-      failedRateNames.push(rate.anime ? rate.anime.name : rate.manga.name)
+      failedRateList.push(rate as any)
       console.error(error)
     }
   }
@@ -228,8 +234,9 @@ const exportRateListToAnilist = async (type: RateType) => {
   globalState.clearLoadingScreenTip()
   globalState.toggleLoadingState()
 
-  if (failedRateNames.length) {
+  if (failedRateList.length) {
     globalState.showToast(t("general.several_failed_imports"), "warn")
+    exportRateListToAnilist(type, failedRateList)
   } else {
     globalState.showToast(t("general.successful_import"), "success")
   }
