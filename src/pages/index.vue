@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { promiseTimeout } from "@vueuse/core"
 import {
   SearchAnimeByNameQuery,
   useSearchAnimeByNameQuery,
@@ -61,6 +62,7 @@ const isMangaReadyToImport = computed(
 /* ==================== refs START ==================== */
 const shikimoriId = $ref<string>()
 const fetchingLimit = $ref(10)
+const timeoutSec = $ref(20)
 /* ==================== refs END ==================== */
 
 /* ==================== methods START ==================== */
@@ -210,6 +212,13 @@ const exportRateListToAnilist = async (type: RateType) => {
 
     try {
       await proceedExport(rate)
+
+      if (i > 0 && i % 10 === 0) {
+        globalState.loadingScreenTip = t("general.import_timeout", {
+          sec: timeoutSec,
+        })
+        await promiseTimeout(timeoutSec * 1000)
+      }
     } catch (error) {
       failedRateNames.push(rate.anime ? rate.anime.name : rate.manga.name)
       console.error(error)
@@ -230,15 +239,23 @@ const exportRateListToAnilist = async (type: RateType) => {
 
 <template>
   <div class="py-10 ccontainer">
-    <div class="border rounded mb-8 p-4">
-      <InputField
-        v-model="fetchingLimit"
-        label="Fetching limit"
-        class="w-[20%]"
-      ></InputField>
-    </div>
+    <section class="border rounded mb-8 p-4">
+      <h3 class="text-lg mb-3">{{ t("general.export_import_settings") }}</h3>
+      <div class="flex">
+        <InputField
+          v-model="fetchingLimit"
+          label="Fetching limit"
+          class="mr-4 w-[20%]"
+        ></InputField>
+        <InputField
+          v-model="timeoutSec"
+          label="Timeout sec"
+          class="w-[20%]"
+        ></InputField>
+      </div>
+    </section>
 
-    <div class="border rounded mb-8 p-4">
+    <section class="border rounded mb-8 p-4">
       <div class="grid gap-x-4 grid-cols-2 items-end">
         <InputField
           v-model="shikimoriId"
@@ -293,9 +310,9 @@ const exportRateListToAnilist = async (type: RateType) => {
           </span>
         </p>
       </div>
-    </div>
+    </section>
 
-    <div class="flex justify-center">
+    <section class="flex justify-center">
       <ButtonComponent
         class="mr-4"
         :disabled="!isAnimeReadyToImport || globalState.loadingState"
@@ -312,6 +329,6 @@ const exportRateListToAnilist = async (type: RateType) => {
         <p class="mr-2">{{ t("anilist.export_manga_to_anilist") }}</p>
         <i-carbon-export />
       </ButtonComponent>
-    </div>
+    </section>
   </div>
 </template>
