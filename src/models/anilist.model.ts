@@ -1,8 +1,6 @@
-export enum AnimeStatus {
-  CURRENT = "current",
-  PLANNING = "planning",
-  COMPLETED = "completed",
-  DROPPED = "dropped",
-  PAUSED = "paused",
-  REPEATING = "repeating",
-}
+import {
+  SearchAnimeByNameQuery,
+  SearchMangaByNameQuery,
+} from "~/gql/generated/schema"
+
+export type SearchTitleByNameQuery = SearchAnimeByNameQuery | SearchMangaByNameQuery

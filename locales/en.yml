@@ -18,6 +18,7 @@ anilist:
   can_not_set_anime: Can not set anime {animeName}
   anime_set_successfully: Anime {animeName} set successfully
   token_has_not_expired: Your token has not expired yet, are you sure?
+  title_not_found: Title {titleName} not found
 
 general:
   several_failed_imports: There are several failed imports

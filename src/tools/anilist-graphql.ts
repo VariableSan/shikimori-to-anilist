@@ -14,7 +14,6 @@ const httpLink = createHttpLink({
 
 const cache = new InMemoryCache({
   addTypename: false,
-  canonizeResults: true,
 })
 
 const acceptJsonMiddleware = new ApolloLink((operation, forward) => {

@@ -2,11 +2,13 @@
 import { promiseTimeout } from "@vueuse/core"
 import {
   SearchAnimeByNameQuery,
+  SearchMangaByNameQuery,
   useSearchAnimeByNameQuery,
   useSearchMangaByNameQuery,
   useSetAnimeToUserListMutation,
 } from "~/gql/generated/schema"
 import { convertShikiStatusToAnilist } from "~/helpers/status-converting"
+import { SearchTitleByNameQuery } from "~/models/anilist.model"
 import {
   RateType,
   UserAnimeRate,
@@ -62,7 +64,7 @@ const isMangaReadyToImport = computed(
 /* ==================== refs START ==================== */
 const shikimoriId = $ref<string>()
 const fetchingLimit = $ref(10)
-const timeoutSec = $ref(20)
+const timeoutSec = $ref(60)
 /* ==================== refs END ==================== */
 
 /* ==================== methods START ==================== */
@@ -147,7 +149,7 @@ const searchMangaByName = (name: string) => {
     search: name,
   })
 
-  return new Promise<SearchAnimeByNameQuery>((res, rej) => {
+  return new Promise<SearchMangaByNameQuery>((res, rej) => {
     onResult(result => {
       res(result.data)
     })
@@ -157,21 +159,47 @@ const searchMangaByName = (name: string) => {
   })
 }
 
-const proceedExport = async (rate: UserAnimeRate | UserMangaRate) => {
-  let res
+const searchTitle = async (rate: UserAnimeRate | UserMangaRate) => {
+  let anilistRes: SearchTitleByNameQuery | null = null
+  let notFound = false
 
-  if (rate.manga === null) {
-    res = await searchAnimeByName(rate.anime.name)
-  } else {
-    res = await searchMangaByName(rate.manga.name)
+  try {
+    if (rate.manga === null) {
+      anilistRes = await searchAnimeByName(rate.anime.name)
+    } else {
+      anilistRes = await searchMangaByName(rate.manga.name)
+    }
+  } catch (error) {
+    const err = JSON.parse(JSON.stringify(error))
+    const statusCode = err.networkError.statusCode
+    if (statusCode === 429) {
+      notFound = false
+    } else {
+      notFound = true
+      console.info(
+        t("anilist.title_not_found", {
+          titleName: getTitleName(rate),
+        }),
+      )
+    }
   }
 
+  return {
+    anilistRes,
+    notFound,
+  }
+}
+
+const getPreparedDataForMutation = (
+  rate: UserAnimeRate | UserMangaRate,
+  anilistRes: SearchTitleByNameQuery,
+) => {
   const updatedAtDate = new Date(rate.updated_at)
   const createdAtDate = new Date(rate.created_at)
 
-  const { mutate } = useSetAnimeToUserListMutation({
+  const { mutate, onError } = useSetAnimeToUserListMutation({
     variables: {
-      mediaId: res.Media?.id,
+      mediaId: anilistRes.Media?.id,
       status: convertShikiStatusToAnilist(rate.status),
       score: rate.score,
       repeat: rate.rewatches,
@@ -188,46 +216,53 @@ const proceedExport = async (rate: UserAnimeRate | UserMangaRate) => {
     },
   })
 
-  await mutate()
+  return { mutate, onError }
 }
 
-const exportRateListToAnilist = async (
-  type: RateType,
-  list: UserAnimeRate[] | UserMangaRate[] = [],
-) => {
-  const failedRateList: UserAnimeRate[] | UserMangaRate[] = []
+const exportRateListToAnilist = async (type: RateType) => {
+  const failedRateList = []
+  let rateList = []
 
-  let rateList: UserAnimeRate[] | UserMangaRate[] = list
-
-  if (!list.length) {
-    if (type === "anime") {
-      rateList = shikiAnimeRateList.value
-    } else {
-      rateList = shikiMangaRateList.value
-    }
+  if (type === "anime") {
+    rateList = shikiAnimeRateList.value
+  } else {
+    rateList = shikiMangaRateList.value
   }
 
   globalState.toggleLoadingState()
 
-  for (let i = 0; i < rateList.length; i++) {
-    const rate = rateList[i]
+  for (let step = 0; step < rateList.length; step++) {
+    const rate = rateList[step]
+    let isError = false
 
-    globalState.loadingScreenTip = rate.anime
-      ? rate.anime.name
-      : rate.manga.name
+    const { anilistRes, notFound } = await searchTitle(rate)
+
+    if (notFound) {
+      failedRateList.push(rate)
+      continue
+    }
+
+    globalState.loadingScreenTip = getTitleName(rate)
+
+    const { mutate } = getPreparedDataForMutation(rate, anilistRes!)
 
     try {
-      await proceedExport(rate)
+      await mutate()
+    } catch {
+      isError = true
+    }
 
-      if (i > 0 && i % 10 === 0) {
+    if (isError) {
+      let intervalTime = parseInt(timeoutSec.toString())
+      const interval = setInterval(() => {
         globalState.loadingScreenTip = t("general.import_timeout", {
-          sec: timeoutSec,
+          sec: intervalTime,
         })
-        await promiseTimeout(timeoutSec * 1000)
-      }
-    } catch (error) {
-      failedRateList.push(rate as any)
-      console.error(error)
+        intervalTime = intervalTime - 1
+      }, 1000)
+      await promiseTimeout(timeoutSec * 1000)
+      clearInterval(interval)
+      step = step - 1
     }
   }
 
@@ -236,10 +271,14 @@ const exportRateListToAnilist = async (
 
   if (failedRateList.length) {
     globalState.showToast(t("general.several_failed_imports"), "warn")
-    exportRateListToAnilist(type, failedRateList)
+    console.info(failedRateList)
   } else {
     globalState.showToast(t("general.successful_import"), "success")
   }
+}
+
+const getTitleName = (rate: UserAnimeRate | UserMangaRate) => {
+  return rate.anime ? rate.anime.name : rate.manga.name
 }
 /* ==================== methods END ==================== */
 </script>
