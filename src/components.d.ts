@@ -15,6 +15,7 @@ declare module '@vue/runtime-core' {
     ICarbon3dCursorAlt: typeof import('~icons/carbon/3d-cursor-alt')['default']
     ICarbonAccessibility: typeof import('~icons/carbon/accessibility')['default']
     ICarbonDownload: typeof import('~icons/carbon/download')['default']
+    ICarbonExport: typeof import('~icons/carbon/export')['default']
     IIconAccessibility: typeof import('~icons/ic/on-accessibility')['default']
     InputField: typeof import('./components/InputField.vue')['default']
     README: typeof import('./components/README.md')['default']

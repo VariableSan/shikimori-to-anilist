@@ -2,10 +2,16 @@
 import {
   SearchAnimeByNameQuery,
   useSearchAnimeByNameQuery,
+  useSearchMangaByNameQuery,
   useSetAnimeToUserListMutation,
 } from "~/gql/generated/schema"
 import { convertShikiStatusToAnilist } from "~/helpers/status-converting"
-import { fetchAnimeList } from "~/services/shikimori.service"
+import {
+  RateType,
+  UserAnimeRate,
+  UserMangaRate,
+} from "~/models/shikimori.model"
+import { fetchAnimeList, fetchMangaList } from "~/services/shikimori.service"
 import { useGlobalState } from "~/stores/global-state"
 import { useShikiState } from "~/stores/shikimori-state"
 
@@ -34,16 +40,27 @@ const shikiAnimeListStatus = computed(() => {
   }
   return { text: "not imported", color: "text-red-500", status: false }
 })
+const shikiMangaListStatus = computed(() => {
+  if (shikiMangaRateList.value.length) {
+    return { text: "imported", color: "text-green-500", status: true }
+  }
+  return { text: "not imported", color: "text-red-500", status: false }
+})
 
 const shikiAnimeRateList = computed(() => shikiState.animeList)
+const shikiMangaRateList = computed(() => shikiState.mangaList)
 
-const isReadyToImport = computed(
+const isAnimeReadyToImport = computed(
   () => shikiAnimeListStatus.value.status && anilistLoginStatus.value.status,
+)
+const isMangaReadyToImport = computed(
+  () => shikiMangaListStatus.value.status && anilistLoginStatus.value.status,
 )
 /* ==================== computeds END ==================== */
 
 /* ==================== refs START ==================== */
 const shikimoriId = $ref<string>()
+const fetchingLimit = $ref(10)
 /* ==================== refs END ==================== */
 
 /* ==================== methods START ==================== */
@@ -53,7 +70,7 @@ const importAnimeFromShiki = async () => {
     globalState.toggleLoadingState()
 
     const res = await fetchAnimeList(shikimoriId, {
-      limit: 20,
+      limit: fetchingLimit,
       page: 1,
     })
     shikiState.setAnimeList(res)
@@ -62,6 +79,28 @@ const importAnimeFromShiki = async () => {
 
     globalState.showToast(
       t("shiki.anime_list_imported_successfully"),
+      "success",
+    )
+  } else {
+    globalState.showToast(t("shiki.empty_shiki_id"), "warn")
+  }
+}
+
+const importMangaFromShiki = async () => {
+  if (shikimoriId?.length) {
+    shikiState.setMangaList([])
+    globalState.toggleLoadingState()
+
+    const res = await fetchMangaList(shikimoriId, {
+      limit: fetchingLimit,
+      page: 1,
+    })
+    shikiState.setMangaList(res)
+
+    globalState.toggleLoadingState()
+
+    globalState.showToast(
+      t("shiki.manga_list_imported_successfully"),
       "success",
     )
   } else {
@@ -101,47 +140,80 @@ const searchAnimeByName = (name: string) => {
   })
 }
 
-const exportAnimeListToAnilist = async () => {
-  const failedAnimeNames: string[] = []
+const searchMangaByName = (name: string) => {
+  const { onResult, onError } = useSearchMangaByNameQuery({
+    search: name,
+  })
+
+  return new Promise<SearchAnimeByNameQuery>((res, rej) => {
+    onResult(result => {
+      res(result.data)
+    })
+    onError(error => {
+      rej(error)
+    })
+  })
+}
+
+const proceedExport = async (rate: UserAnimeRate | UserMangaRate) => {
+  let res
+
+  if (rate.manga === null) {
+    res = await searchAnimeByName(rate.anime.name)
+  } else {
+    res = await searchMangaByName(rate.manga.name)
+  }
+
+  const updatedAtDate = new Date(rate.updated_at)
+  const createdAtDate = new Date(rate.created_at)
+
+  const { mutate } = useSetAnimeToUserListMutation({
+    variables: {
+      mediaId: res.Media?.id,
+      status: convertShikiStatusToAnilist(rate.status),
+      score: rate.score,
+      repeat: rate.rewatches,
+      completedAt: {
+        day: updatedAtDate.getDay(),
+        month: updatedAtDate.getMonth(),
+        year: updatedAtDate.getFullYear(),
+      },
+      startedAt: {
+        day: createdAtDate.getDay(),
+        month: createdAtDate.getMonth(),
+        year: createdAtDate.getFullYear(),
+      },
+    },
+  })
+
+  await mutate()
+}
+
+const exportRateListToAnilist = async (type: RateType) => {
+  const failedRateNames: string[] = []
+  let rateList: UserAnimeRate[] | UserMangaRate[] = []
+
+  if (type === "anime") {
+    rateList = shikiAnimeRateList.value
+  } else {
+    rateList = shikiMangaRateList.value
+  }
 
   globalState.toggleLoadingState()
 
-  for (let i = 0; i < shikiAnimeRateList.value.length; i++) {
-    const animeRate = shikiAnimeRateList.value[i]
+  for (let i = 0; i < rateList.length; i++) {
+    const rate = rateList[i]
     try {
-      const res = await searchAnimeByName(animeRate.anime.name)
-      const updatedAtDate = new Date(animeRate.updated_at)
-      const createdAtDate = new Date(animeRate.created_at)
-
-      const { mutate } = useSetAnimeToUserListMutation({
-        variables: {
-          mediaId: res.Media?.id,
-          status: convertShikiStatusToAnilist(animeRate.status),
-          score: animeRate.score,
-          repeat: animeRate.rewatches,
-          completedAt: {
-            day: updatedAtDate.getDay(),
-            month: updatedAtDate.getMonth(),
-            year: updatedAtDate.getFullYear(),
-          },
-          startedAt: {
-            day: createdAtDate.getDay(),
-            month: createdAtDate.getMonth(),
-            year: createdAtDate.getFullYear(),
-          },
-        },
-      })
-
-      await mutate()
+      await proceedExport(rate)
     } catch (error) {
-      failedAnimeNames.push(animeRate.anime.name)
+      failedRateNames.push(rate.anime ? rate.anime.name : rate.manga.name)
       console.error(error)
     }
   }
 
   globalState.toggleLoadingState()
 
-  if (failedAnimeNames.length) {
+  if (failedRateNames.length) {
     globalState.showToast(t("general.several_failed_imports"), "warn")
   } else {
     globalState.showToast(t("general.successful_import"), "success")
@@ -152,15 +224,14 @@ const exportAnimeListToAnilist = async () => {
 
 <template>
   <div class="py-10 ccontainer">
-    <div class="mb-6 grid gap-6 items-center lg:grid-cols-2">
-      <div class="grid grid-cols-2 items-center">
-        <InputField
-          v-model="shikimoriId"
-          label="Shikimori ID"
-          class="mr-8"
-          @enter="importAnimeFromShiki"
-        ></InputField>
+    <div class="grid gap-x-4 grid-cols-2 items-end">
+      <InputField
+        v-model="shikimoriId"
+        label="Shikimori ID"
+        @enter="importAnimeFromShiki"
+      ></InputField>
 
+      <div class="grid grid-cols-3">
         <ButtonComponent
           @click="importAnimeFromShiki"
           :disabled="globalState.loadingState"
@@ -169,34 +240,60 @@ const exportAnimeListToAnilist = async () => {
           <i-carbon-download />
         </ButtonComponent>
 
+        <ButtonComponent
+          @click="importMangaFromShiki"
+          :disabled="globalState.loadingState"
+        >
+          <p class="mr-2">{{ t("shiki.import_manga_list") }}</p>
+          <i-carbon-download />
+        </ButtonComponent>
+      </div>
+
+      <div>
         <p>
-          Anime list status:
+          {{ t("shiki.anime_list_status") }}:
           <span :class="shikiAnimeListStatus.color">
             {{ shikiAnimeListStatus.text }}
           </span>
         </p>
-      </div>
-
-      <div class="grid gap-1 grid-cols-3">
         <p>
-          Anilist login status:
-          <span :class="anilistLoginStatus.color">
-            {{ anilistLoginStatus.text }}
+          {{ t("shiki.manga_list_status") }}:
+          <span :class="shikiMangaListStatus.color">
+            {{ shikiMangaListStatus.text }}
           </span>
         </p>
-
-        <ButtonComponent @click="loginWithAnilist">
-          {{ t("anilist.login") }}
-        </ButtonComponent>
       </div>
     </div>
 
-    <div>
+    <div class="flex my-8 items-center">
+      <ButtonComponent @click="loginWithAnilist" class="mr-4">
+        {{ t("anilist.login") }}
+      </ButtonComponent>
+
+      <p>
+        Anilist login status:
+        <span :class="anilistLoginStatus.color">
+          {{ anilistLoginStatus.text }}
+        </span>
+      </p>
+    </div>
+
+    <div class="flex justify-center">
       <ButtonComponent
-        :disabled="!isReadyToImport"
-        @click="exportAnimeListToAnilist"
+        class="mr-4"
+        :disabled="!isAnimeReadyToImport"
+        @click="exportRateListToAnilist('anime')"
       >
-        {{ t("anilist.export_anime_to_anilist") }}
+        <p class="mr-2">{{ t("anilist.export_anime_to_anilist") }}</p>
+        <i-carbon-export />
+      </ButtonComponent>
+
+      <ButtonComponent
+        :disabled="!isMangaReadyToImport"
+        @click="exportRateListToAnilist('manga')"
+      >
+        <p class="mr-2">{{ t("anilist.export_manga_to_anilist") }}</p>
+        <i-carbon-export />
       </ButtonComponent>
     </div>
   </div>

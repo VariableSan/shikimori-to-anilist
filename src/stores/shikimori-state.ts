@@ -1,10 +1,10 @@
 import { defineStore } from "pinia"
-import { UserAnimeRate } from "~/models/shikimori.model"
+import { UserAnimeRate, UserMangaRate } from "~/models/shikimori.model"
 
 export const useShikiState = defineStore("shikiState", () => {
   /* ==================== refs START ==================== */
   const animeList = ref<UserAnimeRate[]>([])
-  const mangaList = ref<UserAnimeRate[]>([])
+  const mangaList = ref<UserMangaRate[]>([])
   /* ==================== refs END ==================== */
 
   /* ==================== methods START ==================== */
@@ -13,9 +13,9 @@ export const useShikiState = defineStore("shikiState", () => {
     localStorage.setItem("shikiAnimeList", JSON.stringify(animeList.value))
   }
 
-  const setMangaList = (list: UserAnimeRate[]) => {
+  const setMangaList = (list: UserMangaRate[]) => {
     mangaList.value = list
-    localStorage.setItem("shikiMangaList", JSON.stringify(animeList.value))
+    localStorage.setItem("shikiMangaList", JSON.stringify(mangaList.value))
   }
 
   const setAnimeListFromStorage = () => {
@@ -29,7 +29,7 @@ export const useShikiState = defineStore("shikiState", () => {
   const setMangaListFromStorage = () => {
     const shikiMangaList = localStorage.getItem("shikiMangaList")
     if (shikiMangaList) {
-      const list: UserAnimeRate[] = JSON.parse(shikiMangaList)
+      const list: UserMangaRate[] = JSON.parse(shikiMangaList)
       setMangaList(list)
     }
   }

@@ -13,6 +13,7 @@ const shikiState = useShikiState()
 onMounted(() => {
   anilistState.setTokenFromStorage()
   shikiState.setAnimeListFromStorage()
+  shikiState.setMangaListFromStorage()
 })
 /* ==================== hooks END ==================== */
 

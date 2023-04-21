@@ -1,4 +1,6 @@
-export interface UserAnimeRate {
+export type RateType = "manga" | "anime"
+
+export interface AbstractUserRate {
   id: number
   score: number
   status: AnimeStatus
@@ -11,6 +13,9 @@ export interface UserAnimeRate {
   created_at: string
   updated_at: string
   user: User
+}
+
+export interface UserAnimeRate extends AbstractUserRate {
   anime: Anime
   manga: null
 }
@@ -70,19 +75,7 @@ export enum AnimeStatus {
   DROPPED = "dropped",
 }
 
-export interface UserMangaRate {
-  id: number
-  score: number
-  status: AnimeStatus
-  text: null
-  episodes: null
-  chapters: number
-  volumes: number
-  text_html: string
-  rewatches: number
-  created_at: string
-  updated_at: string
-  user: User
+export interface UserMangaRate extends AbstractUserRate {
   anime: null
   manga: Manga
 }

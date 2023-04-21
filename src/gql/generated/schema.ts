@@ -4694,6 +4694,13 @@ export type SearchAnimeByNameQueryVariables = Exact<{
 
 export type SearchAnimeByNameQuery = { __typename?: 'Query', Media?: { __typename?: 'Media', id: number } | null };
 
+export type SearchMangaByNameQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']>;
+}>;
+
+
+export type SearchMangaByNameQuery = { __typename?: 'Query', Media?: { __typename?: 'Media', id: number } | null };
+
 
 export const SetAnimeToUserListDocument = gql`
     mutation SetAnimeToUserList($mediaId: Int, $status: MediaListStatus, $score: Float, $repeat: Int, $startedAt: FuzzyDateInput, $completedAt: FuzzyDateInput) {
@@ -4809,3 +4816,33 @@ export function useSearchAnimeByNameLazyQuery(variables: SearchAnimeByNameQueryV
   return VueApolloComposable.useLazyQuery<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables>(SearchAnimeByNameDocument, variables, options);
 }
 export type SearchAnimeByNameQueryCompositionFunctionResult = VueApolloComposable.UseQueryReturn<SearchAnimeByNameQuery, SearchAnimeByNameQueryVariables>;
+export const SearchMangaByNameDocument = gql`
+    query SearchMangaByName($search: String) {
+  Media(type: MANGA, search: $search) {
+    id
+  }
+}
+    `;
+
+/**
+ * __useSearchMangaByNameQuery__
+ *
+ * To run a query within a Vue component, call `useSearchMangaByNameQuery` and pass it any options that fit your needs.
+ * When your component renders, `useSearchMangaByNameQuery` returns an object from Apollo Client that contains result, loading and error properties
+ * you can use to render your UI.
+ *
+ * @param variables that will be passed into the query
+ * @param options that will be passed into the query, supported options are listed on: https://v4.apollo.vuejs.org/guide-composable/query.html#options;
+ *
+ * @example
+ * const { result, loading, error } = useSearchMangaByNameQuery({
+ *   search: // value for 'search'
+ * });
+ */
+export function useSearchMangaByNameQuery(variables: SearchMangaByNameQueryVariables | VueCompositionApi.Ref<SearchMangaByNameQueryVariables> | ReactiveFunction<SearchMangaByNameQueryVariables> = {}, options: VueApolloComposable.UseQueryOptions<SearchMangaByNameQuery, SearchMangaByNameQueryVariables> | VueCompositionApi.Ref<VueApolloComposable.UseQueryOptions<SearchMangaByNameQuery, SearchMangaByNameQueryVariables>> | ReactiveFunction<VueApolloComposable.UseQueryOptions<SearchMangaByNameQuery, SearchMangaByNameQueryVariables>> = {}) {
+  return VueApolloComposable.useQuery<SearchMangaByNameQuery, SearchMangaByNameQueryVariables>(SearchMangaByNameDocument, variables, options);
+}
+export function useSearchMangaByNameLazyQuery(variables: SearchMangaByNameQueryVariables | VueCompositionApi.Ref<SearchMangaByNameQueryVariables> | ReactiveFunction<SearchMangaByNameQueryVariables> = {}, options: VueApolloComposable.UseQueryOptions<SearchMangaByNameQuery, SearchMangaByNameQueryVariables> | VueCompositionApi.Ref<VueApolloComposable.UseQueryOptions<SearchMangaByNameQuery, SearchMangaByNameQueryVariables>> | ReactiveFunction<VueApolloComposable.UseQueryOptions<SearchMangaByNameQuery, SearchMangaByNameQueryVariables>> = {}) {
+  return VueApolloComposable.useLazyQuery<SearchMangaByNameQuery, SearchMangaByNameQueryVariables>(SearchMangaByNameDocument, variables, options);
+}
+export type SearchMangaByNameQueryCompositionFunctionResult = VueApolloComposable.UseQueryReturn<SearchMangaByNameQuery, SearchMangaByNameQueryVariables>;
