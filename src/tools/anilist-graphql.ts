@@ -52,7 +52,7 @@ const errorHandler = onError(({ graphQLErrors, networkError }) => {
 })
 
 const anilistApolloClient = new ApolloClient({
-  link: from([acceptJsonMiddleware, errorHandler, httpLink]),
+  link: from([acceptJsonMiddleware, httpLink]),
   cache,
   credentials: "include",
 })

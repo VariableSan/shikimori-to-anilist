@@ -171,8 +171,12 @@ const searchTitle = async (rate: UserAnimeRate | UserMangaRate) => {
     }
   } catch (error) {
     const err = JSON.parse(JSON.stringify(error))
-    const statusCode = err.networkError.statusCode
-    if (statusCode === 429) {
+    const statusCode = err.networkError?.statusCode
+    const networkErrorMessage = (err.message as string)
+      ?.toLocaleLowerCase()
+      ?.includes("networkerror")
+
+    if (statusCode === 429 || networkErrorMessage) {
       notFound = false
     } else {
       notFound = true
@@ -240,11 +244,15 @@ const exportRateListToAnilist = async (type: RateType) => {
     if (notFound) {
       failedRateList.push(rate)
       continue
+    } else if (!anilistRes) {
+      await pauseApplication()
+      step = step - 1
+      continue
     }
 
     globalState.loadingScreenTip = getTitleName(rate)
 
-    const { mutate } = getPreparedDataForMutation(rate, anilistRes!)
+    const { mutate } = getPreparedDataForMutation(rate, anilistRes)
 
     try {
       await mutate()
@@ -253,15 +261,7 @@ const exportRateListToAnilist = async (type: RateType) => {
     }
 
     if (isError) {
-      let intervalTime = parseInt(timeoutSec.toString())
-      const interval = setInterval(() => {
-        globalState.loadingScreenTip = t("general.import_timeout", {
-          sec: intervalTime,
-        })
-        intervalTime = intervalTime - 1
-      }, 1000)
-      await promiseTimeout(timeoutSec * 1000)
-      clearInterval(interval)
+      await pauseApplication()
       step = step - 1
     }
   }
@@ -279,6 +279,18 @@ const exportRateListToAnilist = async (type: RateType) => {
 
 const getTitleName = (rate: UserAnimeRate | UserMangaRate) => {
   return rate.anime ? rate.anime.name : rate.manga.name
+}
+
+const pauseApplication = async () => {
+  let intervalTime = parseInt(timeoutSec.toString())
+  const interval = setInterval(() => {
+    globalState.loadingScreenTip = t("general.import_timeout", {
+      sec: intervalTime - 2,
+    })
+    intervalTime = intervalTime - 1
+  }, 1000)
+  await promiseTimeout(timeoutSec * 1000)
+  clearInterval(interval)
 }
 /* ==================== methods END ==================== */
 </script>
