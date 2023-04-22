@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = defineProps({
   label: String,
-  modelValue: String,
+  modelValue: [String, Number],
 })
 
 const emit = defineEmits(["update:modelValue", "enter"])
