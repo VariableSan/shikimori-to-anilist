@@ -1,5 +1,6 @@
 import VueI18n from "@intlify/unplugin-vue-i18n/vite"
 import Vue from "@vitejs/plugin-vue"
+import "dotenv/config"
 import LinkAttributes from "markdown-it-link-attributes"
 import Shiki from "markdown-it-shiki"
 import path from "node:path"
@@ -9,17 +10,12 @@ import IconsResolver from "unplugin-icons/resolver"
 import Components from "unplugin-vue-components/vite"
 import VueMacros from "unplugin-vue-macros"
 import { defineConfig } from "vite"
-import Inspect from "vite-plugin-inspect"
 import Pages from "vite-plugin-pages"
-import { VitePWA } from "vite-plugin-pwa"
-import Inspector from "vite-plugin-vue-inspector"
 import Layouts from "vite-plugin-vue-layouts"
 import Markdown from "vite-plugin-vue-markdown"
-import WebfontDownload from "vite-plugin-webfont-dl"
 import WindiCSS from "vite-plugin-windicss"
 import generateSitemap from "vite-ssg-sitemap"
 import windiConfig from "./windi.config"
-import "dotenv/config"
 
 export default defineConfig({
   server: {
@@ -99,35 +95,6 @@ export default defineConfig({
       },
     }),
 
-    // https://github.com/antfu/vite-plugin-pwa
-    VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "safari-pinned-tab.svg"],
-      manifest: {
-        name: "Vitesse",
-        short_name: "Vitesse",
-        theme_color: "#ffffff",
-        icons: [
-          {
-            src: "/pwa-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "/pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "/pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable",
-          },
-        ],
-      },
-    }),
-
     // https://github.com/intlify/bundle-tools/tree/main/packages/unplugin-vue-i18n
     VueI18n({
       runtimeOnly: true,
@@ -135,18 +102,6 @@ export default defineConfig({
       fullInstall: true,
       include: [path.resolve(__dirname, "locales/**")],
     }),
-
-    // https://github.com/antfu/vite-plugin-inspect
-    // Visit http://localhost:3333/__inspect/ to see the inspector
-    Inspect(),
-
-    // https://github.com/webfansplz/vite-plugin-vue-inspector
-    Inspector({
-      toggleButtonVisibility: "never",
-    }),
-
-    // https://github.com/feat-agency/vite-plugin-webfont-dl
-    WebfontDownload(),
 
     WindiCSS({
       config: windiConfig,

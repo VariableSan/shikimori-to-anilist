@@ -12,9 +12,7 @@ const httpLink = createHttpLink({
   uri: "https://graphql.anilist.co",
 })
 
-const cache = new InMemoryCache({
-  addTypename: false,
-})
+const cache = new InMemoryCache()
 
 const acceptJsonMiddleware = new ApolloLink((operation, forward) => {
   operation.setContext(() => {

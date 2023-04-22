@@ -201,7 +201,7 @@ const getPreparedDataForMutation = (
   const updatedAtDate = new Date(rate.updated_at)
   const createdAtDate = new Date(rate.created_at)
 
-  const { mutate, onError } = useSetAnimeToUserListMutation({
+  const { mutate } = useSetAnimeToUserListMutation({
     variables: {
       mediaId: anilistRes.Media?.id,
       status: convertShikiStatusToAnilist(rate.status),
@@ -220,7 +220,7 @@ const getPreparedDataForMutation = (
     },
   })
 
-  return { mutate, onError }
+  return mutate
 }
 
 const exportRateListToAnilist = async (type: RateType) => {
@@ -237,7 +237,6 @@ const exportRateListToAnilist = async (type: RateType) => {
 
   for (let step = 0; step < rateList.length; step++) {
     const rate = rateList[step]
-    let isError = false
 
     const { anilistRes, notFound } = await searchTitle(rate)
 
@@ -252,15 +251,11 @@ const exportRateListToAnilist = async (type: RateType) => {
 
     globalState.loadingScreenTip = getTitleName(rate)
 
-    const { mutate } = getPreparedDataForMutation(rate, anilistRes)
+    const mutate = getPreparedDataForMutation(rate, anilistRes)
 
     try {
       await mutate()
     } catch {
-      isError = true
-    }
-
-    if (isError) {
       await pauseApplication()
       step = step - 1
     }
@@ -271,7 +266,6 @@ const exportRateListToAnilist = async (type: RateType) => {
 
   if (failedRateList.length) {
     globalState.showToast(t("general.several_failed_imports"), "warn")
-    console.info(failedRateList)
   } else {
     globalState.showToast(t("general.successful_import"), "success")
   }
