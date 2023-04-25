@@ -1,22 +1,9 @@
 <script setup lang="ts">
-import { promiseTimeout } from "@vueuse/core"
-import {
-  SearchAnimeByNameQuery,
-  SearchMangaByNameQuery,
-  useSearchAnimeByNameQuery,
-  useSearchMangaByNameQuery,
-  useSetAnimeToUserListMutation,
-} from "~/gql/generated/schema"
-import { convertShikiStatusToAnilist } from "~/helpers/status-converting"
-import { SearchTitleByNameQuery } from "~/models/anilist.model"
-import {
-  RateType,
-  UserAnimeRate,
-  UserMangaRate,
-} from "~/models/shikimori.model"
+import { RateType, UserRate } from "~/models/shikimori.model"
 import { fetchAnimeList, fetchMangaList } from "~/services/shikimori.service"
 import { useGlobalState } from "~/stores/global-state"
 import { useShikiState } from "~/stores/shikimori-state"
+import { sendRateListToBase } from "~/services/base.service"
 
 defineOptions({
   name: "IndexPage",
@@ -29,25 +16,40 @@ const anilistState = useAnilistState()
 const shikiState = useShikiState()
 /* ==================== composables END ==================== */
 
+/* ==================== constants START ==================== */
+const STATUSES = {
+  enabled: (text = "active") => ({
+    text,
+    color: "text-green-500",
+    status: true,
+  }),
+  disabled: (text = "not active") => ({
+    text,
+    color: "text-red-500",
+    status: false,
+  }),
+}
+/* ==================== constants END ==================== */
+
 /* ==================== computeds START ==================== */
 const anilistLoginStatus = computed(() => {
   if (anilistState.token) {
-    return { text: "active", color: "text-green-500", status: true }
+    return STATUSES.enabled()
   }
-  return { text: "not active", color: "text-red-500", status: false }
+  return STATUSES.disabled()
 })
 
 const shikiAnimeListStatus = computed(() => {
   if (shikiAnimeRateList.value.length) {
-    return { text: "imported", color: "text-green-500", status: true }
+    return STATUSES.enabled("imported")
   }
-  return { text: "not imported", color: "text-red-500", status: false }
+  return STATUSES.disabled("not imported")
 })
 const shikiMangaListStatus = computed(() => {
   if (shikiMangaRateList.value.length) {
-    return { text: "imported", color: "text-green-500", status: true }
+    return STATUSES.enabled("imported")
   }
-  return { text: "not imported", color: "text-red-500", status: false }
+  return STATUSES.disabled("not imported")
 })
 
 const shikiAnimeRateList = computed(() => shikiState.animeList)
@@ -129,103 +131,8 @@ const loginWithAnilist = () => {
   }
 }
 
-const searchAnimeByName = (name: string) => {
-  const { onResult, onError } = useSearchAnimeByNameQuery({
-    search: name,
-  })
-
-  return new Promise<SearchAnimeByNameQuery>((res, rej) => {
-    onResult(result => {
-      res(result.data)
-    })
-    onError(error => {
-      rej(error)
-    })
-  })
-}
-
-const searchMangaByName = (name: string) => {
-  const { onResult, onError } = useSearchMangaByNameQuery({
-    search: name,
-  })
-
-  return new Promise<SearchMangaByNameQuery>((res, rej) => {
-    onResult(result => {
-      res(result.data)
-    })
-    onError(error => {
-      rej(error)
-    })
-  })
-}
-
-const searchTitle = async (rate: UserAnimeRate | UserMangaRate) => {
-  let anilistRes: SearchTitleByNameQuery | null = null
-  let notFound = false
-
-  try {
-    if (rate.manga === null) {
-      anilistRes = await searchAnimeByName(rate.anime.name)
-    } else {
-      anilistRes = await searchMangaByName(rate.manga.name)
-    }
-  } catch (error) {
-    const err = JSON.parse(JSON.stringify(error))
-    const statusCode = err.networkError?.statusCode
-    const networkErrorMessage = (err.message as string)
-      ?.toLocaleLowerCase()
-      ?.includes("networkerror")
-
-    if (statusCode === 429 || networkErrorMessage) {
-      notFound = false
-    } else {
-      notFound = true
-      console.info(
-        t("anilist.title_not_found", {
-          titleName: getTitleName(rate),
-        }),
-      )
-    }
-  }
-
-  return {
-    anilistRes,
-    notFound,
-  }
-}
-
-const getPreparedDataForMutation = (
-  rate: UserAnimeRate | UserMangaRate,
-  anilistRes: SearchTitleByNameQuery,
-) => {
-  const updatedAtDate = new Date(rate.updated_at)
-  const createdAtDate = new Date(rate.created_at)
-
-  const { mutate } = useSetAnimeToUserListMutation({
-    variables: {
-      mediaId: anilistRes.Media?.id,
-      status: convertShikiStatusToAnilist(rate.status),
-      score: rate.score,
-      repeat: rate.rewatches,
-      completedAt: {
-        day: updatedAtDate.getDay(),
-        month: updatedAtDate.getMonth(),
-        year: updatedAtDate.getFullYear(),
-      },
-      startedAt: {
-        day: createdAtDate.getDay(),
-        month: createdAtDate.getMonth(),
-        year: createdAtDate.getFullYear(),
-      },
-    },
-  })
-
-  return mutate
-}
-
 const exportRateListToAnilist = async (type: RateType) => {
-  const failedRateList = []
-  let rateList = []
+  let rateList: UserRate[] = []
 
   if (type === "anime") {
     rateList = shikiAnimeRateList.value
@@ -234,57 +141,11 @@ const exportRateListToAnilist = async (type: RateType) => {
   }
 
   globalState.toggleLoadingState()
-
-  for (let step = 0; step < rateList.length; step++) {
-    const rate = rateList[step]
-
-    const { anilistRes, notFound } = await searchTitle(rate)
-
-    if (notFound) {
-      failedRateList.push(rate)
-      continue
-    } else if (!anilistRes) {
-      await pauseApplication()
-      step = step - 1
-      continue
-    }
-
-    globalState.loadingScreenTip = getTitleName(rate)
-
-    const mutate = getPreparedDataForMutation(rate, anilistRes)
-
-    try {
-      await mutate()
-    } catch {
-      await pauseApplication()
-      step = step - 1
-    }
-  }
-
-  globalState.clearLoadingScreenTip()
+  const failedRateList = await sendRateListToBase(rateList)
   globalState.toggleLoadingState()
 
-  if (failedRateList.length) {
-    globalState.showToast(t("general.several_failed_imports"), "warn")
-  } else {
-    globalState.showToast(t("general.successful_import"), "success")
-  }
-}
-
-const getTitleName = (rate: UserAnimeRate | UserMangaRate) => {
-  return rate.anime ? rate.anime.name : rate.manga.name
-}
-
-const pauseApplication = async () => {
-  let intervalTime = parseInt(timeoutSec.toString())
-  const interval = setInterval(() => {
-    globalState.loadingScreenTip = t("general.import_timeout", {
-      sec: intervalTime - 2,
-    })
-    intervalTime = intervalTime - 1
-  }, 1000)
-  await promiseTimeout(timeoutSec * 1000)
-  clearInterval(interval)
+  globalState.showToast(t("general.several_failed_imports"), "warn")
+  console.info("failedRateList", failedRateList)
 }
 /* ==================== methods END ==================== */
 </script>

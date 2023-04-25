@@ -101,3 +101,5 @@ export interface MangaImage {
   x96: string
   x48: string
 }
+
+export type UserRate = UserAnimeRate | UserMangaRate
