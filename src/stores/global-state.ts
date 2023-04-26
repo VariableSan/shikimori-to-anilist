@@ -6,7 +6,6 @@ export const useGlobalState = defineStore("globalState", () => {
   const loadingState = ref(false)
   const scrollState = ref(true)
   const loadingScreenTip = ref("")
-  const stopExport = ref(false)
   /* ==================== refs END ==================== */
 
   /* ==================== reactives START ==================== */
@@ -48,7 +47,6 @@ export const useGlobalState = defineStore("globalState", () => {
     loadingState,
     toast,
     loadingScreenTip,
-    stopExport,
 
     toggleLoadingState,
     toggleScrollState,

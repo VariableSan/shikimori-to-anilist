@@ -25,7 +25,5 @@ general:
   successful_import: Successful import to anilist
   import_timeout: Timeout for {sec} seconds
   export_import_settings: Settings
-  stop: Stop
-  stop_export: Stop export
 
 not-found: Not found

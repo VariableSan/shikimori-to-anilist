@@ -16,7 +16,7 @@ defineProps({
   >
     <div
       v-if="show"
-      class="flex flex-col h-full bg-gray-800 bg-opacity-70 w-full inset-0 transition-opacity z-100 duration-300 fixed items-center justify-center"
+      class="flex flex-col h-full bg-gray-800 w-full opacity-70 inset-0 transition-opacity z-100 duration-300 fixed items-center justify-center"
     >
       <div>
         <div class="h-24 w-24">
@@ -66,8 +66,6 @@ defineProps({
       <div v-if="message" class="flex mt-2 w-full justify-center">
         <p>{{ message }}</p>
       </div>
-
-      <slot name="action"></slot>
     </div>
   </transition>
 </template>
