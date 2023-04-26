@@ -78,6 +78,8 @@ const importAnimeFromShiki = async () => {
     shikiState.setAnimeList([])
     globalState.toggleLoadingState()
 
+    globalState.loadingScreenTip = "Importing anime"
+
     const res = await fetchAnimeList(shikimoriId, {
       limit: fetchingLimit,
       page: 1,
@@ -99,6 +101,8 @@ const importMangaFromShiki = async () => {
   if (shikimoriId?.length) {
     shikiState.setMangaList([])
     globalState.toggleLoadingState()
+
+    globalState.loadingScreenTip = "Importing manga"
 
     const res = await fetchMangaList(shikimoriId, {
       limit: fetchingLimit,
@@ -220,8 +224,10 @@ const exportRateListToAnilist = async (type: RateType) => {
 
   globalState.toggleLoadingState()
 
-  globalState.showToast(t("general.several_failed_imports"), "warn")
-  console.info("failedRateList", failedRateList.value)
+  if (failedRateList.value.length) {
+    globalState.showToast(t("general.several_failed_imports"), "warn")
+    console.info("failedRateList", failedRateList.value)
+  }
 }
 
 const setApplicationTimeout = (timeLeft = timeoutSec) => {
