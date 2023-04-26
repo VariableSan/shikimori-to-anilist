@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { getRateName, pauseApplication } from "~/helpers/general-tools"
+import { IterationStatus } from "~/models/common.model"
 import { RateType, UserRate } from "~/models/shikimori.model"
+import anilistService from "~/services/anilist.service"
 import { fetchAnimeList, fetchMangaList } from "~/services/shikimori.service"
 import { useGlobalState } from "~/stores/global-state"
 import { useShikiState } from "~/stores/shikimori-state"
-import { sendRateListToBase } from "~/services/base.service"
 
 defineOptions({
   name: "IndexPage",
@@ -67,6 +69,7 @@ const isMangaReadyToImport = computed(
 const shikimoriId = $ref<string>()
 const fetchingLimit = $ref(10)
 const timeoutSec = $ref(60)
+const failedRateList = ref<UserRate[]>([])
 /* ==================== refs END ==================== */
 
 /* ==================== methods START ==================== */
@@ -131,6 +134,56 @@ const loginWithAnilist = () => {
   }
 }
 
+const searchAndHandleTitle = async (rate: UserRate) => {
+  const rateName = getRateName(rate)
+
+  const { anilistRes, notFound } = await anilistService.searchTitle(rate)
+  let iterationStatus: IterationStatus = null
+
+  if (notFound) {
+    console.error(`Not found: ${rateName}`)
+    failedRateList.value.push(rate)
+    iterationStatus = "skip"
+  } else if (!anilistRes) {
+    console.error(`Anilist response is undefined for ${getRateName(rate)}`)
+    const interval = setApplicationTimeout()
+    await pauseApplication(timeoutSec)
+    clearInterval(interval)
+    iterationStatus = "step-back"
+  }
+
+  return {
+    anilistRes,
+    iterationStatus,
+  }
+}
+
+const handleExporting = async (rate: UserRate, anilistRes: any) => {
+  let iterationStatus: IterationStatus = null
+  const rateName = getRateName(rate)
+
+  const { status: errorStatus, data: errorData } =
+    await anilistService.exportRateToAnilist(rate, anilistRes)
+
+  if (errorStatus === 403) {
+    failedRateList.value.push(rate)
+
+    console.error(
+      `Error response for rate ${rateName}: ${JSON.stringify(
+        errorData,
+      )}. The iteration continues`,
+    )
+  } else if (errorData) {
+    console.error(`Error response: ${JSON.stringify(errorData)}`)
+    const interval = setApplicationTimeout()
+    await pauseApplication(timeoutSec)
+    clearInterval(interval)
+    iterationStatus = "step-back"
+  }
+
+  return iterationStatus
+}
+
 const exportRateListToAnilist = async (type: RateType) => {
   let rateList: UserRate[] = []
 
@@ -141,11 +194,44 @@ const exportRateListToAnilist = async (type: RateType) => {
   }
 
   globalState.toggleLoadingState()
-  const failedRateList = await sendRateListToBase(rateList)
+
+  for (let step = 0; step < rateList.length; step++) {
+    const rate = rateList[step]
+
+    globalState.loadingScreenTip = `Exporting: ${getRateName(rate)}`
+
+    const { anilistRes, iterationStatus: searchIterationStatus } =
+      await searchAndHandleTitle(rate)
+
+    if (searchIterationStatus === "skip") {
+      continue
+    } else if (searchIterationStatus === "step-back") {
+      step = step - 1
+      continue
+    }
+
+    const exportIterationStatus = await handleExporting(rate, anilistRes)
+
+    if (exportIterationStatus === "step-back") {
+      step = step - 1
+      continue
+    }
+  }
+
   globalState.toggleLoadingState()
 
   globalState.showToast(t("general.several_failed_imports"), "warn")
-  console.info("failedRateList", failedRateList)
+  console.info("failedRateList", failedRateList.value)
+}
+
+const setApplicationTimeout = (timeLeft = timeoutSec) => {
+  const interval = setInterval(() => {
+    if (timeLeft <= 0) {
+      clearInterval(interval)
+    }
+    globalState.loadingScreenTip = `Timeout for: ${--timeLeft} sec`
+  }, 1000)
+  return interval
 }
 /* ==================== methods END ==================== */
 </script>
@@ -181,14 +267,14 @@ const exportRateListToAnilist = async (type: RateType) => {
             :disabled="globalState.loadingState"
           >
             <p class="mr-2">{{ t("shiki.import_anime_list") }}</p>
-            <i-carbon-download />
+            <ICarbonDownload />
           </ButtonComponent>
           <ButtonComponent
             @click="importMangaFromShiki"
             :disabled="globalState.loadingState"
           >
             <p class="mr-2">{{ t("shiki.import_manga_list") }}</p>
-            <i-carbon-download />
+            <ICarbonDownload />
           </ButtonComponent>
         </div>
 
@@ -232,7 +318,7 @@ const exportRateListToAnilist = async (type: RateType) => {
         @click="exportRateListToAnilist('anime')"
       >
         <p class="mr-2">{{ t("anilist.export_anime_to_anilist") }}</p>
-        <i-carbon-export />
+        <ICarbonExport />
       </ButtonComponent>
 
       <ButtonComponent
@@ -240,7 +326,7 @@ const exportRateListToAnilist = async (type: RateType) => {
         @click="exportRateListToAnilist('manga')"
       >
         <p class="mr-2">{{ t("anilist.export_manga_to_anilist") }}</p>
-        <i-carbon-export />
+        <ICarbonExport />
       </ButtonComponent>
     </section>
   </div>

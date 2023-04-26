@@ -1,5 +1,10 @@
 import { MediaListStatus } from "~/gql/generated/schema"
-import { AnimeStatus as ShikiAnimeStatus } from "~/models/shikimori.model"
+import {
+  AnimeStatus as ShikiAnimeStatus,
+  UserRate,
+} from "~/models/shikimori.model"
+
+export const defaultTimeoutSec = 60
 
 export function convertShikiStatusToAnilist(
   skikiAnimeStatus: ShikiAnimeStatus,
@@ -18,4 +23,14 @@ export function convertShikiStatusToAnilist(
     case ShikiAnimeStatus.WATCHING:
       return MediaListStatus.Current
   }
+}
+
+export function getRateName(rate: UserRate) {
+  return rate.anime ? rate.anime.name : rate.manga.name
+}
+
+export function pauseApplication(sec = defaultTimeoutSec) {
+  return new Promise(res => {
+    setTimeout(res, sec * 1000)
+  })
 }

@@ -11,3 +11,5 @@ export interface AccessToken {
   tokenType: string
   expiresIn: string
 }
+
+export type IterationStatus = "skip" | "step-back" | null

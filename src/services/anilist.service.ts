@@ -1,14 +1,99 @@
-import { convertShikiStatusToAnilist } from "~/helpers/status-converting"
+import {
+  convertShikiStatusToAnilist,
+  getRateName,
+} from "~/helpers/general-tools"
+import {
+  UserAnimeRate,
+  UserMangaRate,
+  UserRate,
+} from "~/models/shikimori.model"
 import axios from "~/tools/anilist.axios"
 
-export async function updateUserAnime(rate: any, anilistRes: any) {
+const searchTimeoutSec = 60
+
+async function searchTitle(rate: UserAnimeRate | UserMangaRate) {
+  let anilistRes: any = null
+  let notFound = false
+  const rateName = getRateName(rate)
+
+  try {
+    if (rate.anime) {
+      anilistRes = (await searchAnimeByName(rateName)).data
+    } else {
+      anilistRes = (await searchMangaByName(rateName)).data
+    }
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      notFound = true
+    }
+  }
+
+  return {
+    anilistRes: anilistRes ? anilistRes.data : null,
+    notFound,
+  }
+}
+
+const exportRateToAnilist = async (rate: UserRate, anilistRes: any) => {
+  const data = getPreparedDataForMutation(rate, anilistRes)
+
+  const exportError = {
+    status: null,
+    data: null,
+  }
+
+  try {
+    await axios.post("", data)
+  } catch (error: any) {
+    exportError.status = error.response?.status
+    exportError.data = error.response?.data
+  }
+
+  return exportError
+}
+
+async function searchAnimeByName(name: string) {
+  return axios.post(
+    "",
+    {
+      query:
+        "query ($search: String) { Media(type: ANIME, search: $search) { id } }",
+      variables: {
+        search: name,
+      },
+    },
+    {
+      timeout: searchTimeoutSec * 1000,
+    },
+  )
+}
+
+async function searchMangaByName(name: string) {
+  return axios.post(
+    "",
+    {
+      query:
+        "query ($search: String) { Media(type: MANGA, search: $search) { id } }",
+      variables: {
+        search: name,
+      },
+    },
+    {
+      timeout: searchTimeoutSec * 1000,
+    },
+  )
+}
+
+function getPreparedDataForMutation(
+  rate: UserAnimeRate | UserMangaRate,
+  anilistRes: any,
+) {
   const updatedAtDate = new Date(rate.updated_at)
   const createdAtDate = new Date(rate.created_at)
 
-  const mutationData = {
-    operationName: "SetAnimeToUserList",
+  return {
     query:
-      "mutation SetAnimeToUserList($mediaId: Int, $status: MediaListStatus, $score: Float, $repeat: Int, $startedAt: FuzzyDateInput, $completedAt: FuzzyDateInput) {\n  SaveMediaListEntry(\n    mediaId: $mediaId\n    status: $status\n    score: $score\n    repeat: $repeat\n    startedAt: $startedAt\n    completedAt: $completedAt\n  ) {\n    id\n    status\n    media {\n      title {\n        english\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}",
+      "mutation ($mediaId: Int, $status: MediaListStatus, $score: Float, $repeat: Int, $startedAt: FuzzyDateInput, $completedAt: FuzzyDateInput) {SaveMediaListEntry(mediaId: $mediaId status: $status score: $score repeat: $repeat startedAt: $startedAt completedAt: $completedAt) {id status media {title {english}}}}",
     variables: {
       mediaId: anilistRes.Media?.id,
       status: convertShikiStatusToAnilist(rate.status),
@@ -26,13 +111,9 @@ export async function updateUserAnime(rate: any, anilistRes: any) {
       },
     },
   }
+}
 
-  try {
-    await axios.post("/", mutationData)
-  } catch (error) {
-    console.info(JSON.parse(JSON.stringify(error)))
-    throw new Error("cannot update")
-  }
-
-  return mutationData
+export default {
+  searchTitle,
+  exportRateToAnilist,
 }
