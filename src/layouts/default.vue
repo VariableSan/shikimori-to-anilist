@@ -9,6 +9,12 @@ const anilistState = useAnilistState()
 const shikiState = useShikiState()
 /* ==================== composables END ==================== */
 
+/* ==================== methods START ==================== */
+const stopExporting = () => {
+  globalState.stopExport = true
+}
+/* ==================== methods END ==================== */
+
 /* ==================== hooks START ==================== */
 onMounted(() => {
   anilistState.setTokenFromStorage()
@@ -34,7 +40,16 @@ watch(
     <GlobalLoader
       :show="globalState.loadingState"
       :message="globalState.loadingScreenTip"
-    ></GlobalLoader>
+    >
+      <template #action>
+        <div class="mt-8">
+          <ButtonComponent
+            :label="$t('general.stop_export')"
+            @click="stopExporting"
+          ></ButtonComponent>
+        </div>
+      </template>
+    </GlobalLoader>
 
     <ToastComponent
       :show="globalState.toast.show"

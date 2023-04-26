@@ -196,6 +196,10 @@ const exportRateListToAnilist = async (type: RateType) => {
   globalState.toggleLoadingState()
 
   for (let step = 0; step < rateList.length; step++) {
+    if (globalState.stopExport) {
+      break
+    }
+
     const rate = rateList[step]
 
     globalState.loadingScreenTip = `Exporting: ${getRateName(rate)}`
@@ -219,9 +223,12 @@ const exportRateListToAnilist = async (type: RateType) => {
   }
 
   globalState.toggleLoadingState()
+  globalState.stopExport = false
 
-  globalState.showToast(t("general.several_failed_imports"), "warn")
-  console.info("failedRateList", failedRateList.value)
+  if (failedRateList.value.length) {
+    globalState.showToast(t("general.several_failed_imports"), "warn")
+    console.info("failedRateList", failedRateList.value)
+  }
 }
 
 const setApplicationTimeout = (timeLeft = timeoutSec) => {
