@@ -190,6 +190,7 @@ const handleExporting = async (rate: UserRate, anilistRes: any) => {
 
 const exportRateListToAnilist = async (type: RateType) => {
   let rateList: UserRate[] = []
+  failedRateList.value = []
 
   if (type === "anime") {
     rateList = shikiAnimeRateList.value
