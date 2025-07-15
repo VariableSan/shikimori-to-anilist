@@ -1,0 +1,18 @@
+services:
+  frontend:
+    image: shiki-to-anilist:latest
+    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 512M
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NODE_OPTIONS=--max-old-space-size=4096
