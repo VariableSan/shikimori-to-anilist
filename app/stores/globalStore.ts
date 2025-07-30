@@ -1,7 +1,10 @@
 export const useGlobalStore = defineStore('global', () => {
 	const colorMode = useColorMode()
 
-	const loading = ref(false)
+	const loader = reactive({
+		show: false,
+		message: '',
+	})
 
 	const isDark = computed({
 		get() {
@@ -16,10 +19,15 @@ export const useGlobalStore = defineStore('global', () => {
 		isDark.value = !isDark.value
 	}
 
+	const toggleLoadingState = () => {
+		loader.show = !loader.show
+	}
+
 	return {
 		isDark,
-		loading,
+		loader,
 
 		toggleDark,
+		toggleLoadingState,
 	}
 })
